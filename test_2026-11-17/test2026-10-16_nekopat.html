@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ねこ追従</title>
+    <meta name="description" content="ねこの追従とpatpat">
+
+    <!--フォント-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@900&display=swap" rel="stylesheet">
+
+    <!--CSS-->
+    <style>
+        body {
+            background-color: #ffd780;
+            text-align: center;
+            color: #332B1A;
+            font-family: "Zen Maru Gothic", sans-serif;
+            font-weight: 900;
+            font-style: normal;
+        }
+
+        header {
+            background-color: #ffdf99;
+        }
+
+        h1 {
+            font-size: 60px;
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+
+        h1 a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        table {
+            margin-left: auto;
+            margin-right: auto;
+            width: 20%;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        th {
+            text-align: left;
+        }
+
+        td {
+            text-align: right;
+        }
+
+        footer {
+            background-color: #ffdf99;
+            padding-top: 100px;
+            padding-bottom: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <!--ヘッダー-->
+    <header>
+        <!--タイトル-->
+        <h1><a href="">ねこ追従</a></h1>
+    </header>
+
+    <!--メイン-->
+    <main>
+        <!--操作表-->
+        <table>
+            <tr>
+                <th>カーソル移動: </th>
+                <td>ねこ追従</td>
+            </tr>
+            <tr>
+                <th>クリック: </th>
+                <td>ねこpat</td>
+            </tr>
+            <tr>
+                <th>shift: </th>
+                <td>ねこストップ</td>
+            </tr>
+        </table>
+        <!--キャンバス-->
+        <canvas id="canvas" width="1500" height="800" style="border: 1px solid #000000;"></canvas>
+    </main>
+
+    <!--フッター-->
+    <footer>
+        <p>↑ ねこ</p>
+    </footer>
+
+    <!--スクリプト-->
+    <script>
+        // キャンバス
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const mouse = { x: -1000, y: -1000 };  // マウス座標を保持するオブジェクト、初期値は画面外とする
+        const img = new Image();
+        img.src = "https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D";
+
+
+        // キー押下についてのイベント
+        let isPressedShift = false
+        document.addEventListener("keydown", ({ key }) => {
+            if (key === "Shift") {
+                isPressedShift = true;
+            }
+        })
+
+        // キー解放についてのイベント
+        document.addEventListener("keyup", ({ key }) => {
+            if (key === "Shift") {
+                isPressedShift = false;
+            }
+        })
+
+
+        // マウス移動についてのイベント
+        canvas.addEventListener("mousemove", (event) => {
+            if (!isPressedShift) {
+                // マウス座標オブジェクトの更新
+                mouse.x = event.offsetX;
+                mouse.y = event.offsetY;
+            }
+        });
+
+
+        // マウスクリックについてのイベント
+        let clickedFlag = 0;
+
+        canvas.addEventListener("click", (event) => {
+            clickedFlag = 1;
+        });
+
+
+        // アニメーションのループ処理
+        let animationFlame = 0;
+
+        function loop() {
+            // 全消去
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (img.complete) {  // 画像読み込みが完了していれば
+                // 20フレームで1周(Math.PI * 2)するラジアンを計算する
+                const TOTAL_FRAMES = 20;
+                const angle = (animationFlame / TOTAL_FRAMES) * (Math.PI * 2);
+                /* 360°=2π radらしい
+                つまり、総フレーム数を1とした時の現在のフレーム数を、割合として2πに乗算する
+                → フレームが進むごとに、単位円の右端から反時計回りに一周するような角度を計算できる */
+
+                // 画像の大きさ
+                const IMG_WIDTH = 400;
+                const IMG_HEIGHT = 400;
+                const scaleHeight = IMG_HEIGHT - Math.sin(angle) * 100;
+                /* sin()メソッドは、引数にラジアンをとる
+                つまりここでは、フレーム0→フレーム5→フレーム10→フレーム15→フレーム20が、0→1→0→-1→0として変換される
+                注: 下にも示すが実際に使うのは10フレームまで */
+
+                // 画像の描画位置
+                const drawX = mouse.x - IMG_WIDTH / 2;
+                const drawY = mouse.y - IMG_HEIGHT / 2 + (IMG_HEIGHT - scaleHeight);
+
+                // クリックによるアニメーションの開始
+                if (clickedFlag === 1) {  // もしクリックフラグが立っていれば
+                    animationFlame = 1;
+                    clickedFlag = 0;
+                }
+
+                // 描画
+                ctx.drawImage(img, drawX, drawY, IMG_WIDTH, scaleHeight);  // 画像, x座標, y座標, 幅, 高さ
+
+                // アニメーションフレームの加算と終了
+                if (animationFlame > 0) {  // もしアニメーションが再生されていれば
+                    animationFlame++;  // フレームを1つ進める
+                    if (animationFlame > TOTAL_FRAMES / 2) {  // sinが1周する半分、つまり一山(0→1→0)だけを使用して終了する
+                        animationFlame = 0;  // アニメーションを終了
+                    }
+                }
+            }
+
+            // 関数の再帰
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+
+</html>
